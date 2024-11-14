@@ -4,9 +4,11 @@ class RatesController < ApplicationController
   def index
     if rate_params['time']
       begin
-        datetime_param = DateTime.parse(rate_params['time'])
-        datetime_start = datetime_param.beginning_of_day
-        datetime_end = datetime_param.end_of_day
+        datetime_start, datetime_end = parse_time_param(rate_params['time'])
+
+        if datetime_start.nil? || datetime_end.nil?
+          return render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
+        end
 
         @rates = Rate.where(time: datetime_start..datetime_end)
       rescue Date::Error
@@ -22,19 +24,22 @@ class RatesController < ApplicationController
   # GET /api/profitmax
   def profit
     if rate_params['time']
-      begin
-        datetime_param = DateTime.parse(rate_params['time'])
-        datetime_start = datetime_param.beginning_of_day
-        datetime_end = datetime_param.end_of_day
+        datetime_start, datetime_end = parse_time_param(rate_params['time'])
 
+        if datetime_start.nil? || datetime_end.nil?
+          return render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
+        end
+
+        # fetch highest and lowest values
         rates = Rate.where(time: datetime_start..datetime_end).select('MAX(value) AS max_value, MIN(value) AS min_value').first
         highest_value_rate = rates&.max_value
         lowest_value_rate = rates&.min_value
 
+        if highest_value_rate.nil? || lowest_value_rate.nil?
+          return render json: { error: "No rates found for the given time" }, status: :not_found
+        end
+
         highest_profit = ((highest_value_rate - lowest_value_rate) * 100).to_i
-      rescue Date::Error
-        return render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
-      end
     else
       return render json: {error: "Need time param. format: 20240104"}
     end
@@ -46,5 +51,16 @@ class RatesController < ApplicationController
 
   def rate_params
     params.permit(:time)
+  end
+
+
+  def parse_time_param(time)
+    begin
+      datetime_param = DateTime.parse(time)
+
+      [datetime_param.beginning_of_day, datetime_param.end_of_day]
+    rescue Date::Error
+      nil
+    end
   end
 end
