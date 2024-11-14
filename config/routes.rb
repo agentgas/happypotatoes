@@ -10,4 +10,5 @@ Rails.application.routes.draw do
 
   # Rate routes
   get "/api/rates", to: "rates#index"
+  get "/api/profitmax", to: "rates#profit"
 end

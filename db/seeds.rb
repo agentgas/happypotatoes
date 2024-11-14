@@ -17,7 +17,7 @@ total_entries = 7 * 24 * 60
 # init Rand
 r = Random.new
 
-# create entry every second over a month with
+# create entry every second over a month with starting on january 1th 2024
 start_date = DateTime.new(2024, 1, 1, 0, 0, 0)
 
 total_entries.times do
