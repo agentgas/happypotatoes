@@ -1,15 +1,26 @@
 class RatesController < ApplicationController
-  rescue_from ActiveRecord::RecordInvalid, with: :handle_invalid_record
-
   # GET /api/rates
   def index
-    rates = Rate.all.order(time: :asc)
+    if rate_params['time']
+      begin
+        datetime_param = DateTime.parse(rate_params['time'])
+        datetime_start = datetime_param.beginning_of_day
+        datetime_end = datetime_param.end_of_day
 
-    render json: rates, each_serializer: RatesSerializer
+        @rates = Rate.where(time: datetime_start..datetime_end)
+      rescue Date::Error
+        render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity and return
+      end
+    else
+      @rates = Rate.all.order(time: :asc)
+    end
+
+    render json: @rates, each_serializer: RatesSerializer
   end
 
   private
-  def handle_invalid_record(e)
-      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+
+  def rate_params
+    params.permit(:time)
   end
 end
