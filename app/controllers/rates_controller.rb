@@ -64,6 +64,6 @@ class RatesController < ApplicationController
   end
 
   def handle_no_time_param
-    render json: {error: "Need time param. format: yearMonthDay, ex: 20240104"}, status: :not_found
+    render json: {error: "Need time param. format: yearMonthDay, ex: 20240104"}, status: :bad_request
   end
 end
