@@ -7,4 +7,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+
+  # Rate routes
+  get "/api/rates", to: "rates#index"
 end
