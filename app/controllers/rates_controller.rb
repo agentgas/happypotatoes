@@ -11,7 +11,7 @@ class RatesController < ApplicationController
 
       @rates = Rate.where(time: datetime_start..datetime_end)
     else
-      @rates = Rate.all.order(time: :asc).limit(10)
+      return handle_no_time_param
     end
 
     render json: @rates, each_serializer: RatesSerializer
@@ -37,7 +37,7 @@ class RatesController < ApplicationController
 
         highest_profit = ((highest_value_rate - lowest_value_rate) * 100).to_i
     else
-      return render json: {error: "Need time param. format: 20240104"}
+      return handle_no_time_param
     end
 
     render json: {highest_profit: "#{highest_profit}€"}
@@ -60,6 +60,10 @@ class RatesController < ApplicationController
   end
 
   def handle_time_parsing_error
-    render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
+    render json: { error: "Invalid date format, usage: yearMonthDay, ex: 20240105" }, status: :unprocessable_entity
+  end
+
+  def handle_no_time_param
+    render json: {error: "Need time param. format: yearMonthDay, ex: 20240104"}
   end
 end
