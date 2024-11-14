@@ -3,19 +3,15 @@ class RatesController < ApplicationController
   # GET /api/rates
   def index
     if rate_params['time']
-      begin
-        datetime_start, datetime_end = parse_time_param(rate_params['time'])
+      datetime_start, datetime_end = parse_time_param(rate_params['time'])
 
-        if datetime_start.nil? || datetime_end.nil?
-          return render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
-        end
-
-        @rates = Rate.where(time: datetime_start..datetime_end)
-      rescue Date::Error
-        render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity and return
+      if datetime_start.nil? || datetime_end.nil?
+        return handle_time_parsing_error
       end
+
+      @rates = Rate.where(time: datetime_start..datetime_end)
     else
-      @rates = Rate.all.order(time: :asc)
+      @rates = Rate.all.order(time: :asc).limit(10)
     end
 
     render json: @rates, each_serializer: RatesSerializer
@@ -27,7 +23,7 @@ class RatesController < ApplicationController
         datetime_start, datetime_end = parse_time_param(rate_params['time'])
 
         if datetime_start.nil? || datetime_end.nil?
-          return render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
+          return handle_time_parsing_error
         end
 
         # fetch highest and lowest values
@@ -36,7 +32,7 @@ class RatesController < ApplicationController
         lowest_value_rate = rates&.min_value
 
         if highest_value_rate.nil? || lowest_value_rate.nil?
-          return render json: { error: "No rates found for the given time" }, status: :not_found
+          return render json: { error: "No rates on this date" }, status: :not_found
         end
 
         highest_profit = ((highest_value_rate - lowest_value_rate) * 100).to_i
@@ -53,7 +49,6 @@ class RatesController < ApplicationController
     params.permit(:time)
   end
 
-
   def parse_time_param(time)
     begin
       datetime_param = DateTime.parse(time)
@@ -62,5 +57,9 @@ class RatesController < ApplicationController
     rescue Date::Error
       nil
     end
+  end
+
+  def handle_time_parsing_error
+    render json: { error: "Invalid date format, usage: yearmonthday, ex: 20240105" }, status: :unprocessable_entity
   end
 end
